@@ -2,8 +2,8 @@ name: Ecobonus Plafond Monitor
 
 on:
   schedule:
-    - cron: '*/5 * * * *'   # Ogni 5 minuti
-  workflow_dispatch:          # Permette avvio manuale per testare
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
 
 jobs:
   check:
@@ -20,8 +20,11 @@ jobs:
       - name: Installa Chrome
         uses: browser-actions/setup-chrome@v1
 
-      - name: Installa dipendenze
-        run: pip install requests selenium webdriver-manager
+      - name: Installa dipendenze Python
+        run: |
+          pip install --upgrade pip
+          pip install requests selenium webdriver-manager
+          python -c "import selenium; print('Selenium OK:', selenium.__version__)"
 
       - name: Controlla plafond
         env:
