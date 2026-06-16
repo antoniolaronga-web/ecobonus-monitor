@@ -29,20 +29,34 @@ def get_plafond():
     driver = webdriver.Chrome(options=options)
     try:
         driver.get(URL)
-        # Attendi che la pagina carichi il testo "residuo"
-        WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.XPATH, "//*[contains(text(),'residuo')]"))
-        )
-        time.sleep(3)  # attendi rendering completo
-        testo = driver.find_element(By.TAG_NAME, "body").text
-        print("Testo pagina:\n", testo[:500])
+        time.sleep(8)  # attendi rendering Angular
 
+        # Stampa tutto il testo visibile
+        testo = driver.find_element(By.TAG_NAME, "body").text
+        print("=== TESTO PAGINA (primi 1000 char) ===")
+        print(testo[:1000])
+        print("=== FINE TESTO ===")
+
+        # Stampa anche il source HTML per vedere i dati grezzi
+        html = driver.page_source
+        print("=== HTML (primi 2000 char) ===")
+        print(html[:2000])
+        print("=== FINE HTML ===")
+
+        # Cerca "residuo" nel testo
         match = re.search(r"residuo\s+([\d.,]+)\s*€", testo, re.IGNORECASE)
         if match:
             num = match.group(1).replace(".", "").replace(",", ".")
             return float(num)
+
+        # Cerca anche nell'HTML
+        match2 = re.search(r"residuo[^€]*?([\d.,]+)\s*€", html, re.IGNORECASE)
+        if match2:
+            num = match2.group(1).replace(".", "").replace(",", ".")
+            return float(num)
+
     except Exception as e:
-        print(f"Errore Selenium: {e}")
+        print(f"Errore: {e}")
     finally:
         driver.quit()
     return None
