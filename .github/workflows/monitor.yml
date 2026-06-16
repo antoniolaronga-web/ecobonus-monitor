@@ -12,22 +12,11 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Installa Chrome
-        uses: browser-actions/setup-chrome@v1
-
-      - name: Installa dipendenze Python
-        run: |
-          pip install --upgrade pip
-          pip install requests selenium webdriver-manager
-          python -c "import selenium; print('Selenium OK:', selenium.__version__)"
-
-      - name: Controlla plafond
+      - name: Installa e lancia
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
-        run: python check_plafond.py
+        run: |
+          pip install requests selenium webdriver-manager
+          pip show selenium
+          python check_plafond.py
