@@ -1,0 +1,27 @@
+name: Ecobonus Plafond Monitor
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # Ogni 5 minuti
+  workflow_dispatch:          # Permette avvio manuale per testare
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installa dipendenze
+        run: pip install requests
+
+      - name: Controlla plafond
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: python check_plafond.py
