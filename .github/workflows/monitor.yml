@@ -17,8 +17,11 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Installa Chrome
+        uses: browser-actions/setup-chrome@v1
+
       - name: Installa dipendenze
-        run: pip install requests
+        run: pip install requests selenium webdriver-manager
 
       - name: Controlla plafond
         env:
