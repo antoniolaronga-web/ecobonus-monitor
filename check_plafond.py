@@ -1,41 +1,50 @@
-import requests
-import re
 import os
+import re
+import time
+import requests
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 CHAT_ID = os.environ["CHAT_ID"]
 SOGLIA = 11000
+URL = "https://www.bonusveicolielettrici.mase.gov.it/veicolielettriciBeneficiario/#/plafond"
 
 def get_plafond():
-    url = "https://www.bonusveicolielettrici.mase.gov.it/veicolielettriciBeneficiario/api/numeri"
-    headers = {
-        "Accept": "application/json",
-        "User-Agent": "Mozilla/5.0"
-    }
-    try:
-        r = requests.get(url, headers=headers, timeout=15)
-        data = r.json()
-        # Il campo potrebbe chiamarsi "residuo" o simile
-        residuo = data.get("residuo") or data.get("plafondResiduo") or data.get("disponibile")
-        if residuo is not None:
-            return float(residuo)
-    except Exception:
-        pass
+    options = Options()
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--window-size=1280,800")
+    options.add_argument(
+        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    )
 
-    # Fallback: scraping HTML della pagina pubblica
+    driver = webdriver.Chrome(options=options)
     try:
-        r = requests.get(
-            "https://www.bonusveicolielettrici.mase.gov.it/veicolielettriciBeneficiario/",
-            headers={"User-Agent": "Mozilla/5.0"},
-            timeout=15
+        driver.get(URL)
+        # Attendi che la pagina carichi il testo "residuo"
+        WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.XPATH, "//*[contains(text(),'residuo')]"))
         )
-        match = re.search(r"residuo\s*[:\s]*([\d.,]+)\s*[€E]", r.text, re.IGNORECASE)
+        time.sleep(3)  # attendi rendering completo
+        testo = driver.find_element(By.TAG_NAME, "body").text
+        print("Testo pagina:\n", testo[:500])
+
+        match = re.search(r"residuo\s+([\d.,]+)\s*€", testo, re.IGNORECASE)
         if match:
             num = match.group(1).replace(".", "").replace(",", ".")
             return float(num)
-    except Exception:
-        pass
-
+    except Exception as e:
+        print(f"Errore Selenium: {e}")
+    finally:
+        driver.quit()
     return None
 
 def send_telegram(residuo):
@@ -43,7 +52,7 @@ def send_telegram(residuo):
         f"🚨 *ECOBONUS DISPONIBILE\\!*\n\n"
         f"💰 Plafond residuo: *{residuo:,.0f} €*\n"
         f"🎯 Soglia superata: 11\\.000 €\n\n"
-        f"👉 [Vai subito al portale](https://www.bonusveicolielettrici.mase.gov.it/veicolielettriciBeneficiario/#/plafond)\n\n"
+        f"👉 [Vai subito al portale]({URL})\n\n"
         f"⏰ Hai 30 giorni per usare il voucher\\!"
     )
     requests.post(
@@ -61,7 +70,7 @@ if __name__ == "__main__":
     residuo = get_plafond()
     print(f"Plafond residuo rilevato: {residuo}")
     if residuo is not None and residuo >= SOGLIA:
-        print(f"✅ Soglia superata! Invio notifica Telegram...")
+        print("✅ Soglia superata! Invio notifica Telegram...")
         send_telegram(residuo)
     elif residuo is None:
         print("⚠️ Impossibile leggere il plafond.")
