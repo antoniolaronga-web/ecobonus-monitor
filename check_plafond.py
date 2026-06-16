@@ -90,3 +90,4 @@ if __name__ == "__main__":
         print("⚠️ Impossibile leggere il plafond.")
     else:
         print(f"⏳ Sotto soglia ({residuo} < {SOGLIA})")
+        send_telegram(residuo)
