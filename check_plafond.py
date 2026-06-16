@@ -1,4 +1,3 @@
-cat > /mnt/user-data/outputs/check_plafond.py << 'EOF'
 import os
 import re
 import time
@@ -69,4 +68,3 @@ if __name__ == "__main__":
         send_telegram("⚠️ Ecobonus Monitor: impossibile leggere il plafond.")
     else:
         send_telegram(f"⏳ Ecobonus: plafond sotto soglia. Residuo attuale: {residuo:,.0f} €")
-EOF
